@@ -4,7 +4,7 @@ module CsvFind
   VERSION = {
     major: '0',
     minor: '0',
-    patch: '0'
+    patch: '1'
   }.values.join('.')
 
   def self.included(base)

@@ -14,6 +14,7 @@ Add it to a class.
 ```
 class People
   include CsvFind
+  csv_file('path/to/people.csv', {optional: 'csv_configurations'})
 end
 
 ```
