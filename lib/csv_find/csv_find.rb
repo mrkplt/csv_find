@@ -1,4 +1,12 @@
-module CsvClassMaker::CsvFind
+module CsvFind
+  require 'csv'
+
+  VERSION = {
+    major: '0',
+    minor: '0',
+    patch: '0'
+  }.values.join('.')
+
   def self.included(base)
     base.send :extend, ClassMethods
     base.send :prepend, InstanceMethods
@@ -7,10 +15,8 @@ module CsvClassMaker::CsvFind
   module InstanceMethods
     attr_accessor :line_number
 
-    def initialize(hash = nil)
-      if hash
-        hash.each { |k,v| send("#{k}=".to_sym, v) }
-      end
+    def initialize(hash = {})
+      hash.each { |k,v| send("#{k}=".to_sym, v) }
     end
 
     def ==(other_instance)
@@ -32,19 +38,20 @@ module CsvClassMaker::CsvFind
                 :first_line, :middle_line, :last_line
 
     def csv_file(file_name, options = {})
-      @file_options = options
+      @file_options = default_options.merge(options)
       @file = CSV.new(File.open(file_name, 'r'), @file_options)
       @first_line = 2
       @last_line = `wc -l #{file_name}`.split(' ').first.to_i
       @middle_line = (@last_line/2) + 1
       @line_number = nil
-      extract_headers(file_name, options)
+      @headers = extract_headers(file_name, file_options)
+
       define_accessors
     end
 
     def define_accessors
       headers.each do |header|
-        self.send(:attr_accessor, header)
+        send(:attr_accessor, header)
       end
     end
 
@@ -102,12 +109,17 @@ module CsvClassMaker::CsvFind
       '[DEPRECATION] This method is deprecated and will be removed in v2.' <<
       'Please user #where.'
 
+    def default_options
+      {
+        headers: true,
+        header_converters: :symbol,
+        return_headers: false
+      }
+    end
+
     def extract_headers(file_name, options)
       csv_file = File.open(file_name,'r')
-
-      @headers ||= CSV.new(csv_file, options).first.map do |headers, values|
-        headers
-      end
+      CSV.new(csv_file, options).first.headers
     end
 
     def build_instance(row, line)

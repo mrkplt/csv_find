@@ -1,22 +1,11 @@
-require './lib/csv_class_maker'
+require './lib/csv_find'
 
-describe CsvClassMaker do
-  context 'class methods' do
-    describe 'generate_class' do
-      it 'makes a new class object from a file' do
-        CsvClassMaker::generate_class 'People', 'spec/support/demo.csv'
-        Object.constants.include? :People
-      end
-
-      it 'takes a file options' do
-        people = CsvClassMaker::generate_class 'Other', 'spec/support/delimeter.csv', col_sep: "\t"
-        people.first.should respond_to(:nickname)
-      end
-    end
-  end
+class People
+  include CsvFind
+  csv_file('spec/support/demo.csv', {})
 end
 
-describe Object do
+describe People do
   before(:all){
     @person1 = People.new(first: 'Mark', last: 'Platt', nickname: 'JCool', line_number: 2)
     @person2 = People.new(first: 'Longinus', last: 'Smith', nickname: 'Pebbles', line_number: 3)
