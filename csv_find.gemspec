@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.summary = %q{'blah'}
   s.license = 'MIT'
   s.required_ruby_version = '>= 2.0.0'
-  s.test_files = 'spec/csv_class_maker_spec.rb'
+  s.test_files = 'spec/csv_find_spec.rb'
   s.files = [
     'lib/csv_find/csv_find.rb'
   ]
