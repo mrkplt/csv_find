@@ -1,32 +1,24 @@
-CSV Class Maker v1.0.4
+CSV Find v0.0.1
 ========
 
-[![Code Climate](https://codeclimate.com/github/mrkplt/csv_class_maker.png)](https://codeclimate.com/github/mrkplt/csv_class_maker)
-
-CSV Class Maker creates classes out of your CSV headers with some pretty simple search functionality you're probably already comfortable with.
-
-Version 1 has a Ruby 2 requirement. Go pre v1 for 1.9.3. Bug fixes accepted for both.
+<!-- [![Code Climate](https://codeclimate.com/github/mrkplt/csv_class_maker.png)](https://codeclimate.com/github/mrkplt/csv_class_maker) -->
 
 Usage
 --------------
 
 Install
 ```
-gem install csv_class_maker
+gem install csv_find
 ```
-Generate a class to represent the data in your CSV.
+Add it to a class.
 ```
-CsvClassMaker::generate_class('Yourclass', '/path/to/your.csv')
+class People
+  include CsvFind
+end
+
 ```
 
-You can pass in other delimiters, like a tab.
-```
-CsvClassMaker::generate_class('Yourclass', '/path/to/your.csv', col_sep: "\t")
-```
-
-Now you have a class with setters and getters based on the headers of the csv file.
-
-All methods return an instance of Yourclass or an array of Yourclass.
+Now you have a setters and getters based on the headers of the csv file.
 
 Methods
 ```
@@ -38,8 +30,8 @@ Yourclass.last
 Yourclass.each { |a| a.method  }
 ```
 
-Plus, as of v1.0.4, the Enumerable module is implemented in all CSV classes!
+Plus, the Enumerable module is implemented!
 
 License
 -------
-CSV Class Maker is Copyright © 2015 Mark Platt, Inc. It is free software, and may be redistributed under the terms specified in the MIT-LICENSE file.
+CSV Find is Copyright © 2015 Mark Platt, Inc. It is free software, and may be redistributed under the terms specified in the MIT-LICENSE file.
