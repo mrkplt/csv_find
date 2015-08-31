@@ -16,13 +16,13 @@ module CsvFind
     attr_accessor :line_number
 
     def initialize(hash = {})
-      hash.each { |k,v| send("#{k}=".to_sym, v) }
+      hash.each { |k, v| send("#{k}=".to_sym, v) }
     end
 
-    def ==(other_instance)
+    def ==(other)
       instance_variables.map do |instance_variable|
         instance_variable_get(instance_variable) ==
-          other_instance.instance_variable_get(instance_variable)
+          other.instance_variable_get(instance_variable)
       end
     end
 
@@ -34,19 +34,15 @@ module CsvFind
   module ClassMethods
     include Enumerable
 
-    attr_reader :headers, :file, :file_options,
-                :first_line, :middle_line, :last_line
+    attr_reader :headers, :file, :file_options, :data
 
     def csv_file(file_name, options = {})
       @file_options = default_options.merge(options)
-      @file = CSV.new(File.open(file_name, 'r'), @file_options)
-      @first_line = 2
-      @last_line = `wc -l #{file_name}`.split(' ').first.to_i
-      @middle_line = (@last_line/2) + 1
-      @line_number = nil
-      @headers = extract_headers(file_name, file_options)
-
+      @file = CSV.read(file_name)
+      @headers = CSV.new(File.open(file_name, 'r'), file_options).first.headers
       define_accessors
+      @file.shift if file_options[:headers]
+      define_value_objects
     end
 
     def define_accessors
@@ -56,58 +52,46 @@ module CsvFind
     end
 
     def all
-      rewind
-      file.map { |row| build_instance(row, file.lineno) }
+      data
     end
 
-    def where(key_val_pair)
-      search(key_val_pair).map { |row| build_instance(row, row[:line_number]) }
-    end
-
-    def find_by(key_val_pair)
-      warn DEPRECATION_MESSAGE
-      row = search(key_val_pair).last
-      row.nil? ? nil : build_instance(row, row[:line_number])
-    end
-
-    def find_all_by(key_val_pair)
-      warn DEPRECATION_MESSAGE
-      where(key_val_pair)
+    def where(key_val_pairs)
+      dig(key_val_pairs, @data)
     end
 
     def find(line_number)
-      row = if (first_line..middle_line).include?(line_number)
-        front_find(line_number, file.path)
-      else
-        back_find(line_number, file.path)
-      end
-
-      row.nil? ? row : build_instance(row, line_number)
+      data.reverse.find { |row| row.line_number == line_number }
     end
 
     def first
-      rewind
-      build_instance(file.first, first_line)
+      data.first
     end
 
     def last
-      command = `head -n 1 #{file.path} && tail -n 1 #{file.path}`
-      last_row = CSV.new(command, file_options).first
-      build_instance(last_row, last_line)
+      data.last
     end
 
     def each
-      rewind
-      (first_line..last_line).each do |line_number|
-        yield find(line_number) if block_given?
+      data.each do |item|
+        yield item if block_given?
       end
     end
 
     private
 
-    DEPRECATION_MESSAGE =
-      '[DEPRECATION] This method is deprecated and will be removed in v2.' <<
-      'Please user #where.'
+    def define_value_objects
+      @data = @file.each_with_index.map do |row, index|
+        build_instance(data_from(row), index + line_offset)
+      end
+    end
+
+    def data_from(row)
+      {}.tap do |item|
+        headers.each_with_index do |header, position|
+          item[header] = row[position]
+        end
+      end
+    end
 
     def default_options
       {
@@ -117,9 +101,20 @@ module CsvFind
       }
     end
 
-    def extract_headers(file_name, options)
-      csv_file = File.open(file_name,'r')
-      CSV.new(csv_file, options).first.headers
+    def dig(key_val_pairs, last_result)
+      return last_result if key_val_pairs.empty? || last_result.empty?
+      pair = key_val_pairs.shift
+      dig(
+        key_val_pairs,
+        last_result.select { |item| item.send(pair.first) == pair.last }
+      )
+    end
+
+    LINE_ONE_START_OFFSET = 1
+    LINE_TWO_START_OFFSET = 2
+    def line_offset
+      return LINE_ONE_START_OFFSET unless file_options[:headers]
+      LINE_TWO_START_OFFSET
     end
 
     def build_instance(row, line)
@@ -128,38 +123,6 @@ module CsvFind
       new_instance.line_number = line
 
       new_instance
-    end
-
-    def rewind
-      file.rewind
-    end
-
-    def search(key_val_pair)
-      rewind
-      @results = file
-      @pairs = key_val_pair
-
-      @pairs.each { |pair| @results = dig(pair, @results) }
-
-      @results
-    end
-
-    def dig(hash_pair, rows)
-      rows.select do |row|
-        if row[hash_pair.first] == hash_pair.last
-          $. != last_line ? row.push(line_number: $.) : row
-        end
-      end
-    end
-
-    def front_find(line_number, file_path)
-      command = `head -n 1 #{file_path} && head -n #{line_number} #{file_path} | tail -n 1`
-      CSV.new(command, file_options).first
-    end
-
-    def back_find(line_number, file_path)
-      command = `head -n 1 #{file_path} && tail -n #{(last_line + 1) - line_number} #{file_path} | head -n 1`
-      CSV.new(command, file_options).first
     end
   end
 end
