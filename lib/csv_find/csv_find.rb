@@ -16,13 +16,13 @@ module CsvFind
     attr_accessor :line_number
 
     def initialize(hash = {})
-      hash.each { |k,v| send("#{k}=".to_sym, v) }
+      hash.each { |k, v| send("#{k}=".to_sym, v) }
     end
 
-    def ==(other_instance)
+    def ==(other)
       instance_variables.map do |instance_variable|
         instance_variable_get(instance_variable) ==
-          other_instance.instance_variable_get(instance_variable)
+          other.instance_variable_get(instance_variable)
       end
     end
 
@@ -42,7 +42,7 @@ module CsvFind
       @file = CSV.new(File.open(file_name, 'r'), @file_options)
       @first_line = 2
       @last_line = `wc -l #{file_name}`.split(' ').first.to_i
-      @middle_line = (@last_line/2) + 1
+      @middle_line = (@last_line / 2) + 1
       @line_number = nil
       @headers = extract_headers(file_name, file_options)
 
@@ -77,10 +77,10 @@ module CsvFind
 
     def find(line_number)
       row = if (first_line..middle_line).include?(line_number)
-        front_find(line_number, file.path)
-      else
-        back_find(line_number, file.path)
-      end
+              front_find(line_number, file.path)
+            else
+              back_find(line_number, file.path)
+            end
 
       row.nil? ? row : build_instance(row, line_number)
     end
@@ -105,9 +105,8 @@ module CsvFind
 
     private
 
-    DEPRECATION_MESSAGE =
-      '[DEPRECATION] This method is deprecated and will be removed in v2.' <<
-      'Please user #where.'
+    DEPRECATION_MESSAGE = '[DEPRECATION] This method is deprecated and will '\
+                          'be removed in v2. Please use #where.'
 
     def default_options
       {
@@ -118,7 +117,7 @@ module CsvFind
     end
 
     def extract_headers(file_name, options)
-      csv_file = File.open(file_name,'r')
+      csv_file = File.open(file_name, 'r')
       CSV.new(csv_file, options).first.headers
     end
 
@@ -147,7 +146,7 @@ module CsvFind
     def dig(hash_pair, rows)
       rows.select do |row|
         if row[hash_pair.first] == hash_pair.last
-          $. != last_line ? row.push(line_number: $.) : row
+          $NR != last_line ? row.push(line_number: $NR) : row
         end
       end
     end
