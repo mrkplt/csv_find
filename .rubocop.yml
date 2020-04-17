@@ -1,0 +1,11 @@
+Metrics/BlockLength:
+  Exclude:
+    - spec/csv_find_spec.rb
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+Layout/LineLength:
+  Exclude:
+    - csv_find.gemspec
+Metrics/ModuleLength:
+  Exclude:
+    - lib/csv_find/csv_find.rb
